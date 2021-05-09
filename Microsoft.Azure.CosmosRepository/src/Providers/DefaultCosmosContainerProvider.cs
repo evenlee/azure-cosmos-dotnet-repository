@@ -4,6 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.CosmosRepository.Attributes;
 using Microsoft.Azure.CosmosRepository.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -71,7 +72,7 @@ namespace Microsoft.Azure.CosmosRepository.Providers
 
                     ContainerProperties containerProperties = new ContainerProperties
                     {
-                        Id = _options.ContainerPerItemType ? typeof(TItem).Name : _options.ContainerId,
+                        Id = _options.ContainerPerItemType ? GetContainerName() : _options.ContainerId,
                         PartitionKeyPath = _cosmosPartitionKeyPathProvider.GetPartitionKeyPath<TItem>()
                     };
 
@@ -92,5 +93,16 @@ namespace Microsoft.Azure.CosmosRepository.Providers
 
         /// <inheritdoc/>
         public Task<Container> GetContainerAsync() => _lazyContainer.Value;
+
+
+        private string GetContainerName()
+        {
+            var itemType = typeof(TItem);
+            ContainerAttribute attribute =
+                Attribute.GetCustomAttribute(itemType, typeof(ContainerAttribute))
+                as ContainerAttribute;
+
+            return attribute?.Name ?? itemType.Name;
+        }
     }
 }
